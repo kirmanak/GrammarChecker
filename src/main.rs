@@ -1,18 +1,37 @@
 use std::io::{stdin, Read};
 use std::str::Chars;
 
-fn main() {
-    let mut buffer = String::new();
-    stdin()
-        .read_to_string(&mut buffer)
-        .expect("Failed to read from stdin");
-    println!("{:?}", check_grammar(buffer.chars()));
-}
+const BUF_SIZE: usize = 256;
 
-fn check_grammar(chars: Chars) -> bool {
+fn main() {
     let mut stack: Vec<Symbol> = Vec::new();
     stack.push(Symbol::hash);
 
+    let mut buffer = [0; BUF_SIZE];
+    let stdin = stdin();
+    let mut reader = stdin.lock();
+
+    let mut check_result = false;
+    loop {
+        let result = reader.read(&mut buffer).expect("Failed to read from stdin");
+        println!("Result: {}", result);
+        if result > 0 {
+            let vec = buffer.to_vec();
+            let string = String::from_utf8(vec).expect("Failed to parse stdin contents");
+            let string = string.trim().to_string();
+            check_result = check_grammar(&mut stack, string.chars());
+        }
+        if result < BUF_SIZE || !check_result {
+            break; // Since we've read less than requested the input is over
+        }
+    }
+    println!("{}", check_result);
+}
+
+/**
+ * Accepts current stack state and a bunch of new characters
+ */
+fn check_grammar(stack: &mut Vec<Symbol>, chars: Chars) -> bool {
     for character in chars {
         let symbol = Symbol::from(character);
         let stack_head = &stack[stack.len() - 1];
@@ -85,9 +104,7 @@ fn order(stack_head: &Symbol, new_symbol: &Symbol) -> Order {
             Symbol::F => Order::NoRule,
             _ => Order::Greater,
         },
-        Symbol::hash => {
-            panic!("We didn't panic earlier somehow");
-        }
+        _ => Order::NoRule,
     }
 }
 
@@ -104,21 +121,21 @@ impl From<char> for Symbol {
 }
 
 mod tests {
-    use super::check_grammar;
+    use super::*;
 
     #[test]
     fn empty() {
-        assert_eq!(check_grammar("".chars()), true);
+        assert_eq!(check_grammar(&mut vec![Symbol::hash], "".chars()), true);
     }
 
     #[test]
     fn correct() {
-        assert_eq!(check_grammar("a".chars()), true);
+        assert_eq!(check_grammar(&mut vec![Symbol::hash], "a".chars()), true);
     }
 
     #[test]
     #[should_panic]
     fn panics() {
-        check_grammar("h".chars());
+        check_grammar(&mut vec![Symbol::hash], "h".chars());
     }
 }

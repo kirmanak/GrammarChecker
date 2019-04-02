@@ -14,9 +14,8 @@ fn main() {
     let mut check_result = false;
     loop {
         let result = reader.read(&mut buffer).expect("Failed to read from stdin");
-        println!("Result: {}", result);
         if result > 0 {
-            let vec = buffer.to_vec();
+            let vec = buffer[0..result].to_vec();
             let string = String::from_utf8(vec).expect("Failed to parse stdin contents");
             let string = string.trim().to_string();
             check_result = check_grammar(&mut stack, string.chars());
@@ -25,11 +24,14 @@ fn main() {
             break; // Since we've read less than requested the input is over
         }
     }
-    println!("{}", check_result);
+    check_result = check_result && stack == vec![Symbol::hash, Symbol::S];
+    let verb = if check_result { "is" } else { "is not" };
+    println!("The grammar {} correct", verb);
 }
 
 /**
  * Accepts current stack state and a bunch of new characters
+ * Returns true if another bunch should be read
  */
 fn check_grammar(stack: &mut Vec<Symbol>, chars: Chars) -> bool {
     for character in chars {
@@ -37,12 +39,31 @@ fn check_grammar(stack: &mut Vec<Symbol>, chars: Chars) -> bool {
         let stack_head = &stack[stack.len() - 1];
         match order(stack_head, &symbol) {
             Order::Equal | Order::Less => stack.push(symbol),
-            Order::Greater => {}
+            Order::Greater => reduce(stack),
             Order::NoRule => return false,
         }
     }
 
     true
+}
+
+fn reduce(stack: &mut Vec<Symbol>) {
+    let mut base: Vec<Symbol> = Vec::with_capacity(stack.len());
+
+    loop {
+        let last_symbol = stack.pop().expect("Stack is empty!");
+        base.push(last_symbol);
+        let last_symbol = &base[base.len() - 1];
+
+        let stack_head = &stack[stack.len() - 1];
+        if order(last_symbol, stack_head) == Order::Less {
+            break;
+        }
+    }
+
+    match base {
+        vec![Symbol::c] => stack.push(Symbol::A)
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]

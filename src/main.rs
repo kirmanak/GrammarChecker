@@ -1,4 +1,4 @@
-use std::io::{stdin, Read};
+use std::io::{Read, stdin};
 use std::str::Chars;
 
 const BUF_SIZE: usize = 256;
@@ -36,34 +36,64 @@ fn main() {
 fn check_grammar(stack: &mut Vec<Symbol>, chars: Chars) -> bool {
     for character in chars {
         let symbol = Symbol::from(character);
-        let stack_head = &stack[stack.len() - 1];
-        match order(stack_head, &symbol) {
-            Order::Equal | Order::Less => stack.push(symbol),
-            Order::Greater => reduce(stack),
-            Order::NoRule => return false,
+        loop {
+            let stack_head = stack.last().expect("Stack is empty!");
+            match order(stack_head, &symbol) {
+                Order::Equal | Order::Less => {
+                    stack.push(symbol);
+                    break;
+                }
+                Order::Greater => {
+                    if !reduce(stack) {
+                        return false;
+                    }
+                }
+                Order::NoRule => return false,
+            }
         }
     }
 
     true
 }
 
-fn reduce(stack: &mut Vec<Symbol>) {
+fn reduce(stack: &mut Vec<Symbol>) -> bool {
     let mut base: Vec<Symbol> = Vec::with_capacity(stack.len());
 
     loop {
         let last_symbol = stack.pop().expect("Stack is empty!");
         base.push(last_symbol);
-        let last_symbol = &base[base.len() - 1];
-
-        let stack_head = &stack[stack.len() - 1];
-        if order(last_symbol, stack_head) == Order::Less {
+        let last_symbol = base.last().expect("Stack is empty!");
+        let stack_head = stack.last();
+        if let Some(head) = stack_head {
+            if order(head, last_symbol) == Order::Less {
+                break;
+            }
+        } else {
             break;
         }
     }
 
-    match base {
-        vec![Symbol::c] => stack.push(Symbol::A)
-    }
+    let new_symbol = if base == vec![Symbol::B, Symbol::b] || base == vec![Symbol::A, Symbol::a] {
+        Symbol::S
+    } else if base == vec![Symbol::S, Symbol::a]
+        || base == vec![Symbol::A, Symbol::E, Symbol::a]
+        || base == vec![Symbol::c]
+    {
+        Symbol::A
+    } else if base == vec![Symbol::S, Symbol::b]
+        || base == vec![Symbol::B, Symbol::F, Symbol::b]
+        || base == vec![Symbol::d]
+    {
+        Symbol::B
+    } else if base == vec![Symbol::B] {
+        Symbol::E
+    } else if base == vec![Symbol::A] {
+        Symbol::F
+    } else {
+        return false;
+    };
+    stack.push(new_symbol);
+    true
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -88,44 +118,44 @@ enum Symbol {
     hash,
 }
 
-fn order(stack_head: &Symbol, new_symbol: &Symbol) -> Order {
-    if *stack_head == Symbol::hash || *new_symbol == Symbol::hash {
-        panic!("{:?}, {:?}", stack_head, new_symbol);
-    }
-    match stack_head {
-        Symbol::S => match new_symbol {
+fn order(left: &Symbol, right: &Symbol) -> Order {
+    match left {
+        Symbol::S => match right {
             Symbol::a | Symbol::b => Order::Equal,
+            Symbol::hash => Order::Greater,
             _ => Order::NoRule,
         },
-        Symbol::B => match new_symbol {
+        Symbol::B => match right {
             Symbol::S | Symbol::B | Symbol::A | Symbol::c | Symbol::d => Order::Less,
             Symbol::F | Symbol::b => Order::Equal,
-            Symbol::a => Order::Greater,
+            Symbol::a | Symbol::hash => Order::Greater,
             _ => Order::NoRule,
         },
-        Symbol::A => match new_symbol {
+        Symbol::A => match right {
             Symbol::S | Symbol::B | Symbol::A | Symbol::c | Symbol::d => Order::Less,
             Symbol::E | Symbol::a => Order::Equal,
-            Symbol::b => Order::Greater,
+            Symbol::b | Symbol::hash => Order::Greater,
             _ => Order::NoRule,
         },
-        Symbol::E => match new_symbol {
+        Symbol::E => match right {
             Symbol::a => Order::Equal,
+            Symbol::hash => Order::Greater,
             _ => Order::NoRule,
         },
-        Symbol::F => match new_symbol {
+        Symbol::F => match right {
             Symbol::b => Order::Equal,
+            Symbol::hash => Order::Greater,
             _ => Order::NoRule,
         },
-        Symbol::b | Symbol::d => match new_symbol {
+        Symbol::b | Symbol::d => match right {
             Symbol::E => Order::NoRule,
             _ => Order::Greater,
         },
-        Symbol::a | Symbol::c => match new_symbol {
+        Symbol::a | Symbol::c => match right {
             Symbol::F => Order::NoRule,
             _ => Order::Greater,
         },
-        _ => Order::NoRule,
+        Symbol::hash => Order::Less,
     }
 }
 
@@ -151,7 +181,12 @@ mod tests {
 
     #[test]
     fn correct() {
-        assert_eq!(check_grammar(&mut vec![Symbol::hash], "a".chars()), true);
+        assert_eq!(check_grammar(&mut vec![Symbol::hash], "db".chars()), true);
+    }
+
+    #[test]
+    fn incorrect() {
+        assert_eq!(check_grammar(&mut vec![Symbol::hash], "bd".chars()), false);
     }
 
     #[test]

@@ -194,6 +194,11 @@ mod tests {
     }
 
     #[test]
+    fn dbaaaabcbb() {
+        assert_eq!(check("dbaaaabcbb"), true)
+    }
+
+    #[test]
     #[should_panic(expected = "h is not allowed")]
     fn panics() {
         check("h");

@@ -1,4 +1,4 @@
-use std::io::{Read, stdin};
+use std::io::{stdin, Read};
 use std::str::Chars;
 
 const BUF_SIZE: usize = 256;
@@ -174,24 +174,28 @@ impl From<char> for Symbol {
 mod tests {
     use super::*;
 
+    fn check(string: &str) -> bool {
+        check_grammar(&mut vec![Symbol::hash], string.chars())
+    }
+
     #[test]
     fn empty() {
-        assert_eq!(check_grammar(&mut vec![Symbol::hash], "".chars()), true);
+        assert_eq!(check(""), true);
     }
 
     #[test]
-    fn correct() {
-        assert_eq!(check_grammar(&mut vec![Symbol::hash], "db".chars()), true);
+    fn db() {
+        assert_eq!(check("db"), true);
     }
 
     #[test]
-    fn incorrect() {
-        assert_eq!(check_grammar(&mut vec![Symbol::hash], "bd".chars()), false);
+    fn bd() {
+        assert_eq!(check("bd"), false);
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "h is not allowed")]
     fn panics() {
-        check_grammar(&mut vec![Symbol::hash], "h".chars());
+        check("h");
     }
 }

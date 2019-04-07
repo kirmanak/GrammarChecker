@@ -205,4 +205,14 @@ mod tests {
     fn panics() {
         check("h");
     }
+
+    #[test]
+    fn caaaaa() {
+        assert_eq!(check("caaaaa"), true);
+    }
+
+    #[test]
+    fn aaaaa() {
+        assert_eq!(check("aaaaa"), false);
+    }
 }

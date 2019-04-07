@@ -1,4 +1,4 @@
-use std::io::{stdin, Read};
+use std::io::{Read, stdin};
 use std::str::Chars;
 
 const BUF_SIZE: usize = 256;
@@ -16,8 +16,10 @@ fn main() {
         let result = reader.read(&mut buffer).expect("Failed to read from stdin");
         if result > 0 {
             let vec = buffer[0..result].to_vec();
-            let string = String::from_utf8(vec).expect("Failed to parse stdin contents");
-            let string = string.trim().to_string();
+            let string = String::from_utf8(vec)
+                .expect("Failed to parse stdin contents")
+                .trim()
+                .to_string();
             check_result = check_grammar(&mut stack, string.chars());
         }
         if result < BUF_SIZE || !check_result {

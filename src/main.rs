@@ -62,15 +62,11 @@ fn reduce(stack: &mut Vec<Symbol>) -> bool {
     let mut base: Vec<Symbol> = Vec::with_capacity(stack.len());
 
     loop {
-        let last_symbol = stack.pop().expect("Stack is empty!");
+        let last_symbol = stack.pop().unwrap();
         base.push(last_symbol);
-        let last_symbol = base.last().expect("Stack is empty!");
-        let stack_head = stack.last();
-        if let Some(head) = stack_head {
-            if order(head, last_symbol) == Order::Less {
-                break;
-            }
-        } else {
+        let last_symbol = base.last().unwrap();
+        let stack_head = stack.last().unwrap();
+        if order(stack_head, last_symbol) == Order::Less {
             break;
         }
     }

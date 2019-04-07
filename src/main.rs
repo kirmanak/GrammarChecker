@@ -75,15 +75,15 @@ fn reduce(stack: &mut Vec<Symbol>) -> bool {
         }
     }
 
-    let new_symbol = if base == vec![Symbol::B, Symbol::b] || base == vec![Symbol::A, Symbol::a] {
+    let new_symbol = if base == vec![Symbol::b, Symbol::B] || base == vec![Symbol::a, Symbol::A] {
         Symbol::S
-    } else if base == vec![Symbol::S, Symbol::a]
-        || base == vec![Symbol::A, Symbol::E, Symbol::a]
+    } else if base == vec![Symbol::a, Symbol::S]
+        || base == vec![Symbol::a, Symbol::E, Symbol::A]
         || base == vec![Symbol::c]
     {
         Symbol::A
-    } else if base == vec![Symbol::S, Symbol::b]
-        || base == vec![Symbol::B, Symbol::F, Symbol::b]
+    } else if base == vec![Symbol::b, Symbol::S]
+        || base == vec![Symbol::b, Symbol::F, Symbol::B]
         || base == vec![Symbol::d]
     {
         Symbol::B

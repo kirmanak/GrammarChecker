@@ -1,4 +1,4 @@
-use std::io::{Read, stdin};
+use std::io::{stdin, Read};
 use std::str::Chars;
 
 const BUF_SIZE: usize = 256;
@@ -14,15 +14,16 @@ fn main() {
     let mut check_result = false;
     loop {
         let result = reader.read(&mut buffer).expect("Failed to read from stdin");
+        let is_over = result < BUF_SIZE;
         if result > 0 {
             let vec = buffer[0..result].to_vec();
             let string = String::from_utf8(vec)
                 .expect("Failed to parse stdin contents")
                 .trim()
                 .to_string();
-            check_result = check_grammar(&mut stack, string.chars());
+            check_result = check_grammar(&mut stack, string.chars(), is_over);
         }
-        if result < BUF_SIZE || !check_result {
+        if is_over || !check_result {
             break; // Since we've read less than requested the input is over
         }
     }
@@ -35,7 +36,7 @@ fn main() {
  * Accepts current stack state and a bunch of new characters
  * Returns true if another bunch should be read
  */
-fn check_grammar(stack: &mut Vec<Symbol>, chars: Chars) -> bool {
+fn check_grammar(stack: &mut Vec<Symbol>, chars: Chars, is_over: bool) -> bool {
     for character in chars {
         let symbol = Symbol::from(character);
         loop {
@@ -55,6 +56,10 @@ fn check_grammar(stack: &mut Vec<Symbol>, chars: Chars) -> bool {
         }
     }
 
+    if is_over && !reduce(stack) {
+        return false;
+    }
+
     true
 }
 
@@ -65,9 +70,12 @@ fn reduce(stack: &mut Vec<Symbol>) -> bool {
         let last_symbol = stack.pop().unwrap();
         base.push(last_symbol);
         let last_symbol = base.last().unwrap();
-        let stack_head = stack.last().unwrap();
-        if order(stack_head, last_symbol) == Order::Less {
-            break;
+        if let Some(stack_head) = stack.last() {
+            if order(stack_head, last_symbol) == Order::Less {
+                break;
+            }
+        } else {
+            return false;
         }
     }
 
@@ -173,12 +181,12 @@ mod tests {
     use super::*;
 
     fn check(string: &str) -> bool {
-        check_grammar(&mut vec![Symbol::hash], string.chars())
+        check_grammar(&mut vec![Symbol::hash], string.chars(), true)
     }
 
     #[test]
     fn empty() {
-        assert_eq!(check(""), true);
+        assert_eq!(check(""), false);
     }
 
     #[test]

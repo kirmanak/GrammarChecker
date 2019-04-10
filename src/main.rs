@@ -21,7 +21,7 @@ fn main() {
                 .expect("Failed to parse stdin contents")
                 .trim()
                 .to_string();
-            check_result = check_grammar(&mut stack, string.chars(), is_over);
+            check_result = check_text(&mut stack, string.chars(), is_over);
         }
         if is_over || !check_result {
             break; // Since we've read less than requested the input is over
@@ -29,14 +29,14 @@ fn main() {
     }
     check_result = check_result && stack == vec![Symbol::hash, Symbol::S];
     let verb = if check_result { "is" } else { "is not" };
-    println!("The grammar {} correct", verb);
+    println!("This text {} correct", verb);
 }
 
 /**
  * Accepts current stack state and a bunch of new characters
  * Returns true if another bunch should be read
  */
-fn check_grammar(stack: &mut Vec<Symbol>, chars: Chars, is_over: bool) -> bool {
+fn check_text(stack: &mut Vec<Symbol>, chars: Chars, is_over: bool) -> bool {
     for character in chars {
         let symbol = Symbol::from(character);
         loop {
@@ -181,7 +181,7 @@ mod tests {
     use super::*;
 
     fn check(string: &str) -> bool {
-        check_grammar(&mut vec![Symbol::hash], string.chars(), true)
+        check_text(&mut vec![Symbol::hash], string.chars(), true)
     }
 
     #[test]
